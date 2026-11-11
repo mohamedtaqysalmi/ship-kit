@@ -9,4 +9,6 @@ and this project intends to follow [Semantic Versioning](https://semver.org/spec
 
 ### Added
 
+- Workflows `pr-checks-python`, `pr-checks-node`, `docker-ghcr` and `release-from-tag`, each with a README, required secrets and failure modes. Not yet run in a real repo.
+- Community files (contributing guide, code of conduct, security policy, issue forms, PR template) and CI: actionlint, yamllint, markdownlint and CodeQL for Actions.
 - Project scaffold: license, editor and lint configuration, pre-commit hooks, and folder layout.
