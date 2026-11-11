@@ -58,15 +58,16 @@ jobs:
           chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-          cat > ~/.ssh/config <<EOF
-Host deploy-target
-  HostName ${DEPLOY_HOST}
-  User ${DEPLOY_USER}
-  IdentityFile ~/.ssh/id_deploy
-  IdentitiesOnly yes
-  StrictHostKeyChecking yes
-  BatchMode yes
-EOF
+          # Written with printf so the block stays valid YAML (a flush-left heredoc is not).
+          {
+            printf 'Host deploy-target\n'
+            printf '  HostName %s\n' "$DEPLOY_HOST"
+            printf '  User %s\n' "$DEPLOY_USER"
+            printf '  IdentityFile ~/.ssh/id_deploy\n'
+            printf '  IdentitiesOnly yes\n'
+            printf '  StrictHostKeyChecking yes\n'
+            printf '  BatchMode yes\n'
+          } > ~/.ssh/config
           chmod 600 ~/.ssh/config
 
       - name: Deploy release and switch symlink
