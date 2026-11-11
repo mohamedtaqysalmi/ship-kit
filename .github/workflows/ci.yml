@@ -35,8 +35,7 @@ jobs:
           tar -xzf "$archive" actionlint
       - name: Lint workflows
         run: |
-          # This repo's own workflows plus every workflow under workflows/.
-          # workflows/ has no YAML yet, so that part of the list may be empty.
+          # This repo's own workflows plus every copy-paste workflow under workflows/.
           mapfile -t files < <(find .github/workflows workflows -type f \( -name '*.yml' -o -name '*.yaml' \) | sort)
           printf 'Linting %s file(s):\n' "${#files[@]}"
           printf '  %s\n' "${files[@]}"

@@ -11,11 +11,13 @@ A folder contains:
 
 ## Written so far
 
-All of these are written but not yet run in a real repo, so none of them is tested.
+All of these are written but not yet run in a real app repo, so none of them is tested. Capture instructions live under [`docs/evidence/`](../docs/evidence/).
 
 - [pr-checks-python](pr-checks-python/)
 - [pr-checks-node](pr-checks-node/)
 - [docker-ghcr](docker-ghcr/)
 - [release-from-tag](release-from-tag/)
+- [ssh-deploy](ssh-deploy/)
+- [nightly-db-backup](nightly-db-backup/)
 
-The SSH deploy and nightly backup workflows are still planned. A workflow only gets listed as tested once there is real run evidence in `docs/evidence/`.
+This repository's CI runs actionlint (and yamllint) on every YAML file under `workflows/`. That is lint coverage, not an end-to-end proof.

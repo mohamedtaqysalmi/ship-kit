@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ship-kit">
+  <rect width="64" height="64" fill="#071a1c"/>
+  <rect x="8" y="14" width="48" height="36" fill="none" stroke="#e6c20f" stroke-width="3"/>
+  <path d="M12 32h40M32 16v32" stroke="#d7e0d4" stroke-width="2"/>
+  <text x="32" y="38" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="14" fill="#eef3ea">SK</text>
+</svg>
