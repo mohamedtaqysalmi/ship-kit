@@ -1,0 +1,29 @@
+name: Bug report
+description: A workflow in this repo fails or behaves differently from its README.
+labels: [bug]
+body:
+  - type: input
+    id: workflow
+    attributes:
+      label: Workflow
+      description: Folder name under `workflows/`.
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected and what you got. Link a failing run if the repo is public.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: Remove secrets and hostnames before pasting.
+      render: text
+  - type: input
+    id: runner
+    attributes:
+      label: Runner
+      description: For example ubuntu-24.04, or a self-hosted runner and its OS.
