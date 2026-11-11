@@ -77,10 +77,27 @@ jobs:
           RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA:0:7}"
           echo "release_id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
 
-          PREVIOUS="$(ssh deploy-target "if [ -L '${DEPLOY_PATH}/current' ]; then readlink -f '${DEPLOY_PATH}/current'; fi" || true)"
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'if [ -L "${DEPLOY_PATH}/current" ]; then' \
+            '  readlink -f "${DEPLOY_PATH}/current"' \
+            'fi' \
+            > /tmp/remote-snapshot.sh
+          PREVIOUS="$(
+            ssh deploy-target env DEPLOY_PATH="$DEPLOY_PATH" bash -s \
+              < /tmp/remote-snapshot.sh || true
+          )"
           echo "previous_release=${PREVIOUS}" >> "$GITHUB_OUTPUT"
 
-          ssh deploy-target "mkdir -p '${DEPLOY_PATH}/releases/${RELEASE_ID}' '${DEPLOY_PATH}/shared'"
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'mkdir -p "${DEPLOY_PATH}/releases/${RELEASE_ID}" "${DEPLOY_PATH}/shared"' \
+            > /tmp/remote-mkdir.sh
+          ssh deploy-target env \
+            DEPLOY_PATH="$DEPLOY_PATH" \
+            RELEASE_ID="$RELEASE_ID" \
+            bash -s < /tmp/remote-mkdir.sh
+
           rsync -az --delete \
             --exclude '.git/' \
             --exclude '.github/' \
@@ -91,9 +108,21 @@ jobs:
             --exclude 'docs/' \
             ./ "deploy-target:${DEPLOY_PATH}/releases/${RELEASE_ID}/"
 
-          ssh deploy-target "cd '${DEPLOY_PATH}/releases/${RELEASE_ID}' && if [ -x '${DEPLOY_PATH}/shared/pre-switch.sh' ]; then '${DEPLOY_PATH}/shared/pre-switch.sh' '${RELEASE_ID}'; fi"
-          ssh deploy-target "ln -sfn '${DEPLOY_PATH}/releases/${RELEASE_ID}' '${DEPLOY_PATH}/current'"
-          ssh deploy-target "if [ -x '${DEPLOY_PATH}/shared/post-switch.sh' ]; then '${DEPLOY_PATH}/shared/post-switch.sh' '${RELEASE_ID}'; fi"
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'cd "${DEPLOY_PATH}/releases/${RELEASE_ID}"' \
+            'if [ -x "${DEPLOY_PATH}/shared/pre-switch.sh" ]; then' \
+            '  "${DEPLOY_PATH}/shared/pre-switch.sh" "${RELEASE_ID}"' \
+            'fi' \
+            'ln -sfn "${DEPLOY_PATH}/releases/${RELEASE_ID}" "${DEPLOY_PATH}/current"' \
+            'if [ -x "${DEPLOY_PATH}/shared/post-switch.sh" ]; then' \
+            '  "${DEPLOY_PATH}/shared/post-switch.sh" "${RELEASE_ID}"' \
+            'fi' \
+            > /tmp/remote-activate.sh
+          ssh deploy-target env \
+            DEPLOY_PATH="$DEPLOY_PATH" \
+            RELEASE_ID="$RELEASE_ID" \
+            bash -s < /tmp/remote-activate.sh
 
       - name: Health check
         id: health
@@ -128,8 +157,17 @@ jobs:
             exit 1
           fi
           echo "Rolling back to ${PREVIOUS_RELEASE}"
-          ssh deploy-target "ln -sfn '${PREVIOUS_RELEASE}' '${DEPLOY_PATH}/current'"
-          ssh deploy-target "if [ -x '${DEPLOY_PATH}/shared/post-switch.sh' ]; then '${DEPLOY_PATH}/shared/post-switch.sh' 'rollback'; fi"
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'ln -sfn "${PREVIOUS_RELEASE}" "${DEPLOY_PATH}/current"' \
+            'if [ -x "${DEPLOY_PATH}/shared/post-switch.sh" ]; then' \
+            '  "${DEPLOY_PATH}/shared/post-switch.sh" "rollback"' \
+            'fi' \
+            > /tmp/remote-rollback.sh
+          ssh deploy-target env \
+            DEPLOY_PATH="$DEPLOY_PATH" \
+            PREVIOUS_RELEASE="$PREVIOUS_RELEASE" \
+            bash -s < /tmp/remote-rollback.sh
           sleep "${HEALTHCHECK_SLEEP_SECONDS:-5}"
           code="$(curl -sS -o /tmp/health.out -w '%{http_code}' --max-time 10 "$HEALTHCHECK_URL" || true)"
           if [ "$code" = "200" ] || [ "$code" = "204" ]; then
