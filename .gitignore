@@ -1,0 +1,17 @@
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local tooling
+.venv/
+node_modules/
+.pre-commit-cache/
+
+# Secrets (never commit these)
+.env
+.env.*
+*.pem
+*.key

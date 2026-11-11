@@ -1,0 +1,18 @@
+extends: default
+
+rules:
+  # GitHub workflows use `on:`, which yamllint would otherwise flag as a boolean.
+  truthy:
+    allowed-values: ["true", "false", "on"]
+    check-keys: false
+  line-length:
+    max: 140
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+  document-start: disable
+  comments:
+    min-spaces-from-content: 1
+  comments-indentation: disable
+  indentation:
+    spaces: 2
+    indent-sequences: true
