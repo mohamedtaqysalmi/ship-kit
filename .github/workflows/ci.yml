@@ -35,12 +35,13 @@ jobs:
           tar -xzf "$archive" actionlint
       - name: Lint workflows
         run: |
-          # This repo's own workflows plus every workflow under workflows/.
-          # workflows/ has no YAML yet, so that part of the list may be empty.
+          # This repo's own workflows plus every copy-paste workflow under workflows/.
           mapfile -t files < <(find .github/workflows workflows -type f \( -name '*.yml' -o -name '*.yaml' \) | sort)
           printf 'Linting %s file(s):\n' "${#files[@]}"
           printf '  %s\n' "${files[@]}"
-          ./actionlint -color "${files[@]}"
+          # SC2016 fires on remote SSH snippets that must stay single-quoted so they
+          # expand on the server (via env=...), not on the runner.
+          ./actionlint -color -ignore 'SC2016:' "${files[@]}"
 
   yamllint:
     name: yamllint

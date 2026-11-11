@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ship-kit — copy-paste GitHub Actions</title>
+    <meta
+      name="description"
+      content="Copy-paste GitHub Actions workflows for solo developers and small agencies. Pick one, read the secrets list, copy the YAML."
+    />
+    <meta property="og:title" content="ship-kit" />
+    <meta
+      property="og:description"
+      content="Workflow picker with YAML, required secrets and failure modes."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mohamedtaqysalmi.github.io/ship-kit/" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip" href="#picker">Skip to workflow picker</a>
+
+    <header class="top">
+      <div class="top-inner">
+        <p class="manifest">MANIFEST · PUBLIC KIT · MIT</p>
+        <nav aria-label="Primary">
+          <a href="https://github.com/mohamedtaqysalmi/ship-kit">GitHub</a>
+          <a href="https://github.com/mohamedtaqysalmi/ship-kit/blob/main/QA.md">QA</a>
+          <a href="https://github.com/mohamedtaqysalmi/ship-kit/tree/main/docs/evidence">Evidence</a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero" aria-label="Introduction">
+      <div class="hero-grid" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <p class="stamp">shipped as source, not as a SaaS</p>
+        <h1>ship-kit</h1>
+        <p class="lede">
+          Copy-paste GitHub Actions for solo operators and small agencies. Each workflow ships with
+          YAML, required secrets and the ways it fails.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="#picker">Open the picker</a>
+          <a class="btn ghost" href="https://github.com/mohamedtaqysalmi/ship-kit">Browse the repo</a>
+        </div>
+      </div>
+    </section>
+
+    <main>
+      <section class="picker-section" id="picker" aria-labelledby="picker-title">
+        <div class="section-head">
+          <h2 id="picker-title">Workflow picker</h2>
+          <p>
+            Choose a workflow. The YAML loads from this site. Copy it into
+            <code>.github/workflows/</code> in your own repo, then set the secrets listed beside it.
+          </p>
+        </div>
+
+        <div class="picker-layout">
+          <div class="list" role="listbox" aria-label="Workflows" id="workflow-list"></div>
+
+          <div class="detail" aria-live="polite">
+            <div class="detail-head">
+              <div>
+                <h3 id="detail-title">Select a workflow</h3>
+                <p id="detail-blurb" class="muted">Pick one on the left to load YAML and secrets.</p>
+                <p id="detail-status" class="status" hidden></p>
+              </div>
+              <div class="detail-actions">
+                <a id="detail-readme" class="text-link" hidden href="#">README</a>
+                <button type="button" class="btn primary" id="copy-btn" disabled>Copy YAML</button>
+              </div>
+            </div>
+
+            <div class="secrets" id="secrets-panel" hidden>
+              <h4>Required secrets</h4>
+              <ul id="secrets-list"></ul>
+            </div>
+
+            <div class="yaml-wrap">
+              <div class="yaml-bar">
+                <span id="yaml-label">YAML</span>
+                <span id="copy-feedback" class="feedback" aria-live="polite"></span>
+              </div>
+              <pre><code id="yaml-view" class="yaml">// pick a workflow</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="notes" aria-labelledby="notes-title">
+        <h2 id="notes-title">How this kit stays honest</h2>
+        <ul>
+          <li>Actions are pinned to full commit SHAs.</li>
+          <li>Jobs request the least privileges they need.</li>
+          <li>A workflow is only called tested after a real run is linked from <code>docs/evidence/</code>.</li>
+          <li>This repo’s own CI runs actionlint, yamllint and markdownlint on every workflow file.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>
+        Built by
+        <a href="https://github.com/mohamedtaqysalmi">Mohamed-Taqy Salmi</a>
+        · MIT ·
+        <a href="https://github.com/mohamedtaqysalmi/ship-kit">source</a>
+      </p>
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+name: SSH deploy with health check and rollback
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ssh-deploy-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy over SSH
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # Settings → Environments → production. Add required reviewers for a human gate.
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      HEALTHCHECK_URL: ${{ secrets.HEALTHCHECK_URL }}
+      HEALTHCHECK_ATTEMPTS: ${{ vars.HEALTHCHECK_ATTEMPTS }}
+      HEALTHCHECK_SLEEP_SECONDS: ${{ vars.HEALTHCHECK_SLEEP_SECONDS }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Require deploy secrets
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH HEALTHCHECK_URL DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::${name} is not set"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          # Written with printf so the block stays valid YAML (a flush-left heredoc is not).
+          {
+            printf 'Host deploy-target\n'
+            printf '  HostName %s\n' "$DEPLOY_HOST"
+            printf '  User %s\n' "$DEPLOY_USER"
+            printf '  IdentityFile ~/.ssh/id_deploy\n'
+            printf '  IdentitiesOnly yes\n'
+            printf '  StrictHostKeyChecking yes\n'
+            printf '  BatchMode yes\n'
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Deploy release and switch symlink
+        id: deploy
+        run: |
+          # Remote snippets stay single-quoted on purpose so they expand on the server via env=.
+          # shellcheck disable=SC2016
+          set -euo pipefail
+          RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA:0:7}"
+          echo "release_id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
+
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'if [ -L "${DEPLOY_PATH}/current" ]; then' \
+            '  readlink -f "${DEPLOY_PATH}/current"' \
+            'fi' \
+            > /tmp/remote-snapshot.sh
+          PREVIOUS="$(
+            ssh deploy-target env DEPLOY_PATH="$DEPLOY_PATH" bash -s \
+              < /tmp/remote-snapshot.sh || true
+          )"
+          echo "previous_release=${PREVIOUS}" >> "$GITHUB_OUTPUT"
+
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'mkdir -p "${DEPLOY_PATH}/releases/${RELEASE_ID}" "${DEPLOY_PATH}/shared"' \
+            > /tmp/remote-mkdir.sh
+          ssh deploy-target env \
+            DEPLOY_PATH="$DEPLOY_PATH" \
+            RELEASE_ID="$RELEASE_ID" \
+            bash -s < /tmp/remote-mkdir.sh
+
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude 'node_modules/' \
+            --exclude '.venv/' \
+            --exclude 'workflows/' \
+            --exclude 'site/' \
+            --exclude 'docs/' \
+            ./ "deploy-target:${DEPLOY_PATH}/releases/${RELEASE_ID}/"
+
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'cd "${DEPLOY_PATH}/releases/${RELEASE_ID}"' \
+            'if [ -x "${DEPLOY_PATH}/shared/pre-switch.sh" ]; then' \
+            '  "${DEPLOY_PATH}/shared/pre-switch.sh" "${RELEASE_ID}"' \
+            'fi' \
+            'ln -sfn "${DEPLOY_PATH}/releases/${RELEASE_ID}" "${DEPLOY_PATH}/current"' \
+            'if [ -x "${DEPLOY_PATH}/shared/post-switch.sh" ]; then' \
+            '  "${DEPLOY_PATH}/shared/post-switch.sh" "${RELEASE_ID}"' \
+            'fi' \
+            > /tmp/remote-activate.sh
+          ssh deploy-target env \
+            DEPLOY_PATH="$DEPLOY_PATH" \
+            RELEASE_ID="$RELEASE_ID" \
+            bash -s < /tmp/remote-activate.sh
+
+      - name: Health check
+        id: health
+        run: |
+          set -euo pipefail
+          attempts="${HEALTHCHECK_ATTEMPTS:-12}"
+          sleep_s="${HEALTHCHECK_SLEEP_SECONDS:-5}"
+          attempt=1
+          while [ "$attempt" -le "$attempts" ]; do
+            echo "Health check attempt ${attempt}/${attempts}: ${HEALTHCHECK_URL}"
+            code="$(curl -sS -o /tmp/health.out -w '%{http_code}' --max-time 10 "$HEALTHCHECK_URL" || true)"
+            echo "HTTP ${code}"
+            if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+              echo "Health check passed."
+              exit 0
+            fi
+            attempt=$((attempt + 1))
+            sleep "$sleep_s"
+          done
+          echo "::error::Health check failed after ${attempts} attempts"
+          exit 1
+
+      - name: Rollback on failed health check
+        if: failure() && steps.deploy.outcome == 'success'
+        env:
+          PREVIOUS_RELEASE: ${{ steps.deploy.outputs.previous_release }}
+          FAILED_RELEASE: ${{ steps.deploy.outputs.release_id }}
+        run: |
+          # Remote snippets stay single-quoted on purpose so they expand on the server via env=.
+          # shellcheck disable=SC2016
+          set -euo pipefail
+          if [ -z "$PREVIOUS_RELEASE" ]; then
+            echo "::error::Health check failed and there is no previous release to restore."
+            exit 1
+          fi
+          echo "Rolling back to ${PREVIOUS_RELEASE}"
+          printf '%s\n' \
+            'set -euo pipefail' \
+            'ln -sfn "${PREVIOUS_RELEASE}" "${DEPLOY_PATH}/current"' \
+            'if [ -x "${DEPLOY_PATH}/shared/post-switch.sh" ]; then' \
+            '  "${DEPLOY_PATH}/shared/post-switch.sh" "rollback"' \
+            'fi' \
+            > /tmp/remote-rollback.sh
+          ssh deploy-target env \
+            DEPLOY_PATH="$DEPLOY_PATH" \
+            PREVIOUS_RELEASE="$PREVIOUS_RELEASE" \
+            bash -s < /tmp/remote-rollback.sh
+          sleep "${HEALTHCHECK_SLEEP_SECONDS:-5}"
+          code="$(curl -sS -o /tmp/health.out -w '%{http_code}' --max-time 10 "$HEALTHCHECK_URL" || true)"
+          if [ "$code" = "200" ] || [ "$code" = "204" ]; then
+            echo "Rollback health check passed."
+          else
+            echo "::warning::Rollback completed but the health URL still returns HTTP ${code}."
+          fi
+          echo "Failed release left for inspection: ${DEPLOY_PATH}/releases/${FAILED_RELEASE}"
+          exit 1
+
+      - name: Wipe SSH key material
+        if: always()
+        run: rm -rf ~/.ssh
