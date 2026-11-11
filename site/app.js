@@ -1,97 +1,91 @@
-import { workflows } from "./catalog.js";
+import { workflows } from "./catalog.mjs";
 
-const listEl = document.getElementById("workflow-list");
-const titleEl = document.getElementById("detail-title");
-const blurbEl = document.getElementById("detail-blurb");
-const statusEl = document.getElementById("detail-status");
+const chips = document.getElementById("workflow-chips");
+const title = document.getElementById("detail-title");
+const tag = document.getElementById("detail-tag");
+const blurb = document.getElementById("detail-blurb");
+const evidenceNote = document.getElementById("detail-evidence");
+const readme = document.getElementById("detail-readme");
+const evidenceDoc = document.getElementById("detail-evidence-doc");
 const secretsPanel = document.getElementById("secrets-panel");
 const secretsList = document.getElementById("secrets-list");
-const yamlView = document.getElementById("yaml-view");
-const yamlLabel = document.getElementById("yaml-label");
+const secretsNote = document.getElementById("secrets-note");
+const yamlCode = document.getElementById("yaml-code");
 const copyBtn = document.getElementById("copy-btn");
-const copyFeedback = document.getElementById("copy-feedback");
-const readmeLink = document.getElementById("detail-readme");
 
-let activeId = null;
-let activeYaml = "";
+const withEvidence = workflows.filter((wf) => wf.evidence).length;
+document.getElementById("fact-count").textContent = String(workflows.length);
+document.getElementById("fact-evidence").textContent = String(withEvidence);
 
-function renderList() {
-  listEl.innerHTML = "";
-  for (const wf of workflows) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "wf-btn";
-    btn.setAttribute("role", "option");
-    btn.setAttribute("aria-selected", "false");
-    btn.dataset.id = wf.id;
-    btn.innerHTML = `<span>${wf.title}</span><small>${wf.status}</small>`;
-    btn.addEventListener("click", () => selectWorkflow(wf.id));
-    listEl.appendChild(btn);
-  }
+function setYaml(text) {
+  const code = document.createElement("code");
+  code.textContent = text;
+  yamlCode.replaceChildren(code);
 }
 
-async function selectWorkflow(id) {
+async function select(id) {
   const wf = workflows.find((item) => item.id === id);
   if (!wf) return;
 
-  activeId = id;
-  for (const btn of listEl.querySelectorAll(".wf-btn")) {
-    btn.setAttribute("aria-selected", btn.dataset.id === id ? "true" : "false");
+  for (const button of chips.children) {
+    button.setAttribute("aria-pressed", button.dataset.id === id ? "true" : "false");
   }
 
-  titleEl.textContent = wf.title;
-  blurbEl.textContent = wf.blurb;
-  statusEl.hidden = false;
-  statusEl.textContent = wf.status;
-  readmeLink.hidden = false;
-  readmeLink.href = wf.readme;
+  title.textContent = wf.title;
+  blurb.textContent = wf.blurb;
+  tag.hidden = false;
+  if (wf.evidence) {
+    tag.textContent = "run linked";
+    tag.className = "tag tag-ok";
+    evidenceNote.replaceChildren(
+      "Real run: ",
+      Object.assign(document.createElement("a"), { href: wf.evidence.url, textContent: wf.evidence.url }),
+    );
+  } else {
+    tag.textContent = "not run";
+    tag.className = "tag tag-no";
+    evidenceNote.textContent = "Not yet run in a real repo. No run evidence exists for this workflow.";
+  }
+  readme.href = wf.readme;
+  readme.hidden = false;
+  evidenceDoc.href = wf.evidenceDoc;
+  evidenceDoc.hidden = false;
 
   secretsPanel.hidden = false;
-  secretsList.innerHTML = "";
-  for (const secret of wf.secrets) {
-    const li = document.createElement("li");
-    li.textContent = secret;
-    secretsList.appendChild(li);
-  }
+  secretsList.replaceChildren(
+    ...wf.secrets.map((name) => {
+      const li = document.createElement("li");
+      li.textContent = name;
+      return li;
+    }),
+  );
+  secretsList.hidden = wf.secrets.length === 0;
+  secretsNote.textContent = wf.note;
 
-  yamlLabel.textContent = wf.snippet;
-  yamlView.textContent = "Loading…";
   copyBtn.disabled = true;
-  copyFeedback.textContent = "";
-
+  setYaml("Loading…");
   try {
-    const res = await fetch(`./snippets/${wf.snippet}`, { cache: "no-cache" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    activeYaml = await res.text();
-    yamlView.textContent = activeYaml;
+    const response = await fetch(`snippets/${wf.snippet}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text = await response.text();
+    if (document.querySelector('#workflow-chips [aria-pressed="true"]')?.dataset.id !== id) return;
+    setYaml(text);
     copyBtn.disabled = false;
-  } catch (err) {
-    activeYaml = "";
-    yamlView.textContent = `Could not load ./snippets/${wf.snippet}. ${err}`;
+  } catch (error) {
+    setYaml(`Could not load snippets/${wf.snippet} (${error.message}). The file is in workflows/${wf.id}/ on GitHub.`);
   }
 }
 
-async function copyYaml() {
-  if (!activeYaml) return;
-  try {
-    await navigator.clipboard.writeText(activeYaml);
-    copyFeedback.textContent = "Copied";
-  } catch {
-    // Fallback for older browsers / denied clipboard permission.
-    const range = document.createRange();
-    range.selectNodeContents(yamlView);
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    copyFeedback.textContent = "Select the YAML and copy manually";
-  }
-  window.setTimeout(() => {
-    if (copyFeedback.textContent === "Copied") copyFeedback.textContent = "";
-  }, 1600);
+for (const wf of workflows) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "chip";
+  button.dataset.id = wf.id;
+  button.setAttribute("aria-pressed", "false");
+  button.textContent = wf.id;
+  button.addEventListener("click", () => select(wf.id));
+  chips.appendChild(button);
 }
 
-copyBtn.addEventListener("click", copyYaml);
-renderList();
-
-const initial = new URLSearchParams(window.location.search).get("wf") || workflows[0]?.id;
-if (initial) selectWorkflow(initial);
+const requested = new URLSearchParams(window.location.search).get("wf");
+select(workflows.some((wf) => wf.id === requested) ? requested : workflows[0].id);
