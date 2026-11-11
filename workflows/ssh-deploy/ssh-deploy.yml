@@ -73,6 +73,8 @@ jobs:
       - name: Deploy release and switch symlink
         id: deploy
         run: |
+          # Remote snippets stay single-quoted on purpose so they expand on the server via env=.
+          # shellcheck disable=SC2016
           set -euo pipefail
           RELEASE_ID="$(date -u +%Y%m%dT%H%M%SZ)-${GITHUB_SHA:0:7}"
           echo "release_id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
@@ -151,6 +153,8 @@ jobs:
           PREVIOUS_RELEASE: ${{ steps.deploy.outputs.previous_release }}
           FAILED_RELEASE: ${{ steps.deploy.outputs.release_id }}
         run: |
+          # Remote snippets stay single-quoted on purpose so they expand on the server via env=.
+          # shellcheck disable=SC2016
           set -euo pipefail
           if [ -z "$PREVIOUS_RELEASE" ]; then
             echo "::error::Health check failed and there is no previous release to restore."
