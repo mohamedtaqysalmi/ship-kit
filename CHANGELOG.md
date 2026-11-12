@@ -7,6 +7,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Fixed
+
+- `ssh-deploy`: roll back when the deploy step fails after the symlink switch, not only on a failed health check; validate `DEPLOY_PATH` and the health check variables before use; stop excluding `site/`, `docs/` and `workflows/` from the rsync.
+- `nightly-db-backup`: run retention only after the restore test passes; make the restore test fail on an empty restore instead of always passing; correct the schedule and version-mismatch notes.
+- `pr-checks-python` README: setup-python fails, not warns, when there is no file to hash for the cache.
+- `pages.yml`: `id-token: write` only on the deploy job.
+
 ## [0.1.0] — 2026-11-11
 
 ### Added

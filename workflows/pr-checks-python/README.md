@@ -20,4 +20,4 @@ None. The workflow has `permissions: contents: read` and does not use any secret
 - **pytest exits with code 5, "no tests collected".** pytest treats an empty test suite as a failure. Add at least one test or remove the step.
 - **Dependencies install but the import fails.** Your project may need to be installed itself (`pip install -e .`). The default install step does not do that.
 - **Works on 3.13, fails on 3.11 (or the reverse).** The matrix runs both with `fail-fast: false`, so you see both results. Fix the code or narrow the matrix.
-- **Cache warning.** The pip cache key is built from `requirements*.txt` and `pyproject.toml`. If neither exists, the setup step warns that there is nothing to hash.
+- **`No file in ... matched to [requirements*.txt, pyproject.toml]`.** The pip cache needs one of those files, and setup-python fails the job when none exists. Add one, or delete the `cache` and `cache-dependency-path` lines from the setup step.

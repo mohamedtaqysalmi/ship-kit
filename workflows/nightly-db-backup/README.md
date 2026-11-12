@@ -1,6 +1,6 @@
 # nightly-db-backup
 
-Runs on a nightly schedule (and on `workflow_dispatch`), dumps a PostgreSQL database with `pg_dump`, uploads a gzip archive to S3-compatible storage, deletes objects older than the retention window, and restores the archive into a fresh Postgres service on the runner as a smoke test.
+Runs on a nightly schedule (and on `workflow_dispatch`), dumps a PostgreSQL database with `pg_dump`, uploads a gzip archive to S3-compatible storage, restores the archive into a fresh Postgres service on the runner as a smoke test, and only then deletes objects older than the retention window. If the restore test fails, nothing is deleted.
 
 **Status: not yet run in a real repo.** No evidence exists in `docs/evidence/` yet, so treat this as untested.
 
@@ -9,11 +9,11 @@ Runs on a nightly schedule (and on `workflow_dispatch`), dumps a PostgreSQL data
 1. Create an S3 bucket (or Cloudflare R2 / MinIO / Backblaze B2 with an S3 API) and an access key limited to that bucket prefix.
 2. Ensure GitHub-hosted runners can reach your Postgres host on the dump port (public IP with a tight firewall allowlist, or move this job to a self-hosted runner on the same network).
 3. Copy `nightly-db-backup.yml` to `.github/workflows/` in your app repo.
-4. Add the secrets below. Prefer a GitHub Environment named `backups` with environment secrets so other workflows cannot read them (add `environment: backups` on the job if you use that).
+4. Add the secrets below. The job already uses a GitHub Environment named `backups`; GitHub creates it on the first run if it does not exist. Put the secrets there so other workflows cannot read them, or remove the `environment:` line and use repository secrets.
 
-Default schedule is `17 3 * * *` (03:17 UTC). Trigger the workflow once manually after merging so GitHub enables the schedule on the default branch.
+Default schedule is `17 3 * * *` (03:17 UTC). Scheduled runs only start from the default branch, and GitHub may delay them by several minutes at busy times.
 
-The restore test uses the job's `postgres:16` service container only. It never writes back to the source database.
+The restore test uses the job's `postgres:16` service container only. It never writes back to the source database. It fails when fewer than `MIN_TABLES` (default 1) non-system tables are loaded. The dump is stored unencrypted, so turn on server-side encryption and a private bucket on the storage side.
 
 ## Required secrets
 
@@ -39,5 +39,6 @@ Retention defaults to 14 days (`RETENTION_DAYS` in the workflow `env`). Object k
 - **`Could not connect to the endpoint URL`.** Bad `S3_ENDPOINT` or missing scheme (`https://...`).
 - **Retention skips objects.** Keys must match `backup-YYYYMMDDTHHMMSSZ.sql.gz`. Manual uploads with other names are left alone.
 - **Restore test fails in `psql`.** The dump is truncated, not Postgres, or contains roles/extensions the service image lacks. Open it with `gzip -dc` and fix the dump flags.
-- **Schedule never fires.** Scheduled workflows stay disabled until someone runs the workflow once from the Actions tab after it lands on the default branch.
-- **Empty source database.** The restore still succeeds (`tables >= 0`). Add a stricter assertion for your schema once you know the expected table count.
+- **Schedule never fires.** The workflow file must be on the default branch. GitHub also disables scheduled workflows in a public repo after 60 days without repository activity; re-enable it from the Actions tab.
+- **`pg_dump: error: aborting because of server version mismatch`.** The runner installs the Ubuntu 24.04 `postgresql-client` (version 16). A newer server needs a matching client, and the `postgres:16` service image used for the restore test must also be at least the server's major version. Change the install step and the service image together.
+- **`Restore test` fails with fewer than `MIN_TABLES` tables.** The dump loaded no tables, for example because `DB_NAME` points at an empty database. Check the name, or lower `MIN_TABLES` on purpose.

@@ -14,7 +14,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # Keep this many daily backups in the bucket (older objects under the prefix are deleted).
+  # Objects under the prefix with a timestamp older than this many days are deleted, but only
+  # after the restore test has passed.
   RETENTION_DAYS: "14"
   BACKUP_PREFIX: db-backups
   # Local Postgres used only for the restore test on the runner.
@@ -23,6 +24,8 @@ env:
   RESTORE_USER: restore
   RESTORE_PASSWORD: restore
   RESTORE_DB: restore_check
+  # The restore test fails if fewer non-system tables than this are loaded.
+  MIN_TABLES: "1"
 
 jobs:
   backup:
@@ -118,6 +121,24 @@ jobs:
           aws s3 cp "$FILE" "s3://${S3_BUCKET}/${KEY}"
           echo "Uploaded s3://${S3_BUCKET}/${KEY}"
 
+      - name: Restore test into a fresh database
+        env:
+          FILE: ${{ steps.dump.outputs.file }}
+          PGPASSWORD: ${{ env.RESTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Restore against the job's service Postgres only — never against the source DB.
+          psql -h "$RESTORE_HOST" -p "$RESTORE_PORT" -U "$RESTORE_USER" -d postgres -v ON_ERROR_STOP=1 \
+            -c "DROP DATABASE IF EXISTS ${RESTORE_DB};" \
+            -c "CREATE DATABASE ${RESTORE_DB};"
+          gunzip -c "$FILE" | psql -h "$RESTORE_HOST" -p "$RESTORE_PORT" -U "$RESTORE_USER" -d "$RESTORE_DB" -v ON_ERROR_STOP=1
+          tables="$(psql -h "$RESTORE_HOST" -p "$RESTORE_PORT" -U "$RESTORE_USER" -d "$RESTORE_DB" -Atc \
+            "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');")"
+          echo "Restore test loaded ${tables} non-system table(s)."
+          # A restore that loads fewer tables than MIN_TABLES is a failure. Raise the number or
+          # add row-count checks for your own schema.
+          test "$tables" -ge "$MIN_TABLES"
+
       - name: Apply retention
         run: |
           set -euo pipefail
@@ -143,20 +164,3 @@ jobs:
                 aws s3 rm "s3://${S3_BUCKET}/${key}"
               fi
             done
-
-      - name: Restore test into a fresh database
-        env:
-          FILE: ${{ steps.dump.outputs.file }}
-          PGPASSWORD: ${{ env.RESTORE_PASSWORD }}
-        run: |
-          set -euo pipefail
-          # Restore against the job's service Postgres only — never against the source DB.
-          psql -h "$RESTORE_HOST" -p "$RESTORE_PORT" -U "$RESTORE_USER" -d postgres -v ON_ERROR_STOP=1 \
-            -c "DROP DATABASE IF EXISTS ${RESTORE_DB};" \
-            -c "CREATE DATABASE ${RESTORE_DB};"
-          gunzip -c "$FILE" | psql -h "$RESTORE_HOST" -p "$RESTORE_PORT" -U "$RESTORE_USER" -d "$RESTORE_DB" -v ON_ERROR_STOP=1
-          tables="$(psql -h "$RESTORE_HOST" -p "$RESTORE_PORT" -U "$RESTORE_USER" -d "$RESTORE_DB" -Atc \
-            "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog', 'information_schema');")"
-          echo "Restore test loaded ${tables} non-system table(s)."
-          # A successful psql apply is the bar. Adapt this assertion for your schema.
-          test "$tables" -ge 0
