@@ -44,6 +44,18 @@ jobs:
               missing=1
             fi
           done
+          # The remote commands below pass these values through ssh as KEY=value words, so they
+          # must not contain spaces or shell metacharacters.
+          if ! printf '%s' "$DEPLOY_PATH" | grep -Eq '^/[A-Za-z0-9._/-]+$'; then
+            echo "::error::DEPLOY_PATH must be an absolute path using only letters, digits, dot, dash, underscore and slash"
+            missing=1
+          fi
+          for name in HEALTHCHECK_ATTEMPTS HEALTHCHECK_SLEEP_SECONDS; do
+            if [ -n "${!name}" ] && ! printf '%s' "${!name}" | grep -Eq '^[0-9]+$'; then
+              echo "::error::${name} must be a whole number"
+              missing=1
+            fi
+          done
           exit "$missing"
 
       - name: Configure SSH
@@ -105,9 +117,6 @@ jobs:
             --exclude '.github/' \
             --exclude 'node_modules/' \
             --exclude '.venv/' \
-            --exclude 'workflows/' \
-            --exclude 'site/' \
-            --exclude 'docs/' \
             ./ "deploy-target:${DEPLOY_PATH}/releases/${RELEASE_ID}/"
 
           printf '%s\n' \
@@ -148,7 +157,7 @@ jobs:
           exit 1
 
       - name: Rollback on failed health check
-        if: failure() && steps.deploy.outcome == 'success'
+        if: failure() && (steps.deploy.outcome == 'failure' || steps.health.outcome == 'failure')
         env:
           PREVIOUS_RELEASE: ${{ steps.deploy.outputs.previous_release }}
           FAILED_RELEASE: ${{ steps.deploy.outputs.release_id }}
@@ -157,7 +166,7 @@ jobs:
           # shellcheck disable=SC2016
           set -euo pipefail
           if [ -z "$PREVIOUS_RELEASE" ]; then
-            echo "::error::Health check failed and there is no previous release to restore."
+            echo "::error::Deploy or health check failed and there is no previous release to restore."
             exit 1
           fi
           echo "Rolling back to ${PREVIOUS_RELEASE}"
