@@ -3,119 +3,275 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ship-kit — copy-paste GitHub Actions</title>
+    <title>ship-kit: GitHub Actions workflows to copy and paste</title>
     <meta
       name="description"
-      content="Copy-paste GitHub Actions workflows for solo developers and small agencies. Pick one, read the secrets list, copy the YAML."
+      content="Copy-paste GitHub Actions workflows for solo developers and small agencies: PR checks, Docker to GHCR, releases, SSH deploy with rollback and nightly database backups. None has been run in a real repo yet, and the page says so."
     />
     <meta property="og:title" content="ship-kit" />
     <meta
       property="og:description"
-      content="Workflow picker with YAML, required secrets and failure modes."
+      content="Copy-paste GitHub Actions workflows with their secrets and failure modes. Each one says whether it has real run evidence."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://mohamedtaqysalmi.github.io/ship-kit/" />
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
+    <meta property="og:image" content="https://mohamedtaqysalmi.github.io/ship-kit/og.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ship-kit" />
+    <meta
+      name="twitter:description"
+      content="Copy-paste GitHub Actions workflows with their secrets and failure modes."
     />
-    <link rel="stylesheet" href="styles.css" />
+    <meta name="twitter:image" content="https://mohamedtaqysalmi.github.io/ship-kit/og.svg" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="base.css" />
+    <link rel="stylesheet" href="page.css" />
   </head>
   <body>
-    <a class="skip" href="#picker">Skip to workflow picker</a>
+    <a class="skip-link" href="#picker">Skip to the workflow picker</a>
 
-    <header class="top">
-      <div class="top-inner">
-        <p class="manifest">MANIFEST · PUBLIC KIT · MIT</p>
-        <nav aria-label="Primary">
-          <a href="https://github.com/mohamedtaqysalmi/ship-kit">GitHub</a>
-          <a href="https://github.com/mohamedtaqysalmi/ship-kit/blob/main/QA.md">QA</a>
-          <a href="https://github.com/mohamedtaqysalmi/ship-kit/tree/main/docs/evidence">Evidence</a>
-        </nav>
-      </div>
+    <header class="wrap site-header">
+      <a class="brand" href="./">
+        <img src="favicon.svg" alt="" width="28" height="28" />
+        ship-kit
+      </a>
+      <nav class="site-nav" aria-label="Primary">
+        <a href="#picker">Picker</a>
+        <a href="#status">What works</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="https://github.com/mohamedtaqysalmi/ship-kit">GitHub</a>
+      </nav>
     </header>
 
-    <section class="hero" aria-label="Introduction">
-      <div class="hero-grid" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <p class="stamp">shipped as source, not as a SaaS</p>
-        <h1>ship-kit</h1>
-        <p class="lede">
-          Copy-paste GitHub Actions for solo operators and small agencies. Each workflow ships with
-          YAML, required secrets and the ways it fails.
-        </p>
-        <div class="cta">
-          <a class="btn primary" href="#picker">Open the picker</a>
-          <a class="btn ghost" href="https://github.com/mohamedtaqysalmi/ship-kit">Browse the repo</a>
-        </div>
-      </div>
-    </section>
-
     <main>
-      <section class="picker-section" id="picker" aria-labelledby="picker-title">
+      <section class="wrap hero">
+        <p class="eyebrow">GitHub Actions · YAML · MIT</p>
+        <h1>Workflows I copy into client repos, with the ways they fail written down.</h1>
+        <p class="lede">
+          Every small project ends up needing the same pipelines: checks on pull requests, a Docker
+          image, a release, a deploy that can roll back, a database backup. I wrote these as
+          single files you copy, each with its required secrets and failure modes. None of them
+          has been run in a real repo yet, and each one is labelled that way until a real run is
+          linked.
+        </p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#picker">Open the picker</a>
+          <a class="btn" href="https://github.com/mohamedtaqysalmi/ship-kit">View the code</a>
+        </div>
+        <dl class="facts">
+          <div>
+            <dt>workflows</dt>
+            <dd id="fact-count">6</dd>
+          </div>
+          <div>
+            <dt>with real run evidence</dt>
+            <dd id="fact-evidence">0</dd>
+          </div>
+          <div>
+            <dt>release</dt>
+            <dd>v0.1.0</dd>
+          </div>
+          <div>
+            <dt>license</dt>
+            <dd>MIT</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="wrap section" id="picker" aria-labelledby="picker-title">
         <div class="section-head">
           <h2 id="picker-title">Workflow picker</h2>
-          <p>
-            Choose a workflow. The YAML loads from this site. Copy it into
-            <code>.github/workflows/</code> in your own repo, then set the secrets listed beside it.
-          </p>
         </div>
+        <div class="section-body flow">
+          <p>
+            Choose a workflow to read its YAML and required secrets. The YAML on this page is
+            copied from the files under <code>workflows/</code> when the site is built, so it is
+            the same text.
+          </p>
+          <div class="chips" id="workflow-chips" role="group" aria-label="Workflows"></div>
+          <noscript>
+            <p class="callout">
+              The picker needs JavaScript. The same files are in the
+              <a href="https://github.com/mohamedtaqysalmi/ship-kit/tree/main/workflows">workflows folder</a>.
+            </p>
+          </noscript>
 
-        <div class="picker-layout">
-          <div class="list" role="listbox" aria-label="Workflows" id="workflow-list"></div>
-
-          <div class="detail" aria-live="polite">
-            <div class="detail-head">
-              <div>
-                <h3 id="detail-title">Select a workflow</h3>
-                <p id="detail-blurb" class="muted">Pick one on the left to load YAML and secrets.</p>
-                <p id="detail-status" class="status" hidden></p>
-              </div>
-              <div class="detail-actions">
-                <a id="detail-readme" class="text-link" hidden href="#">README</a>
-                <button type="button" class="btn primary" id="copy-btn" disabled>Copy YAML</button>
-              </div>
+          <div class="detail flow" aria-live="polite">
+            <div class="detail-top">
+              <h3 id="detail-title">Pick a workflow</h3>
+              <span class="tag tag-no" id="detail-tag" hidden>not run</span>
             </div>
-
-            <div class="secrets" id="secrets-panel" hidden>
-              <h4>Required secrets</h4>
-              <ul id="secrets-list"></ul>
+            <p class="blurb" id="detail-blurb"></p>
+            <p class="hint" id="detail-evidence"></p>
+            <div class="detail-links">
+              <a id="detail-readme" href="https://github.com/mohamedtaqysalmi/ship-kit/tree/main/workflows" hidden>README, secrets and failure modes</a>
+              <a id="detail-evidence-doc" href="https://github.com/mohamedtaqysalmi/ship-kit/tree/main/docs/evidence" hidden>Evidence notes</a>
             </div>
-
-            <div class="yaml-wrap">
-              <div class="yaml-bar">
-                <span id="yaml-label">YAML</span>
-                <span id="copy-feedback" class="feedback" aria-live="polite"></span>
-              </div>
-              <pre><code id="yaml-view" class="yaml">// pick a workflow</code></pre>
+            <div id="secrets-panel" hidden>
+              <p class="label" id="secrets-label">Required secrets</p>
+              <ul class="secret-list" id="secrets-list" aria-labelledby="secrets-label"></ul>
+              <p class="hint" id="secrets-note"></p>
+            </div>
+            <div class="code">
+              <pre id="yaml-code"><code>Choose a workflow above.</code></pre>
+              <button class="btn btn-small copy" type="button" data-copy="yaml-code" id="copy-btn" disabled>Copy</button>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="notes" aria-labelledby="notes-title">
-        <h2 id="notes-title">How this kit stays honest</h2>
-        <ul>
-          <li>Actions are pinned to full commit SHAs.</li>
-          <li>Jobs request the least privileges they need.</li>
-          <li>A workflow is only called tested after a real run is linked from <code>docs/evidence/</code>.</li>
-          <li>This repo’s own CI runs actionlint, yamllint and markdownlint on every workflow file.</li>
-        </ul>
+      <section class="wrap section" id="status" aria-labelledby="status-title">
+        <div class="section-head">
+          <h2 id="status-title">What works</h2>
+        </div>
+        <div class="section-body flow">
+          <p>This is what I can say about all six today, and what I cannot.</p>
+          <ul class="status">
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>
+                This repository's CI lints every file under <code>workflows/</code> with actionlint
+                and yamllint on each pull request.
+              </span>
+            </li>
+            <li>
+              <span class="tag tag-ok">works</span>
+              <span>
+                Actions are pinned to full commit SHAs, and each job sets its own
+                <code>permissions:</code>.
+              </span>
+            </li>
+            <li>
+              <span class="tag tag-partial">partial</span>
+              <span>
+                The failure modes in each README come from reading the tools' documentation and the
+                scripts, not from watching the workflows fail.
+              </span>
+            </li>
+            <li>
+              <span class="tag tag-no">not run</span>
+              <span>
+                No workflow has been run in a real repo. Each has a note under
+                <a href="https://github.com/mohamedtaqysalmi/ship-kit/tree/main/docs/evidence">docs/evidence</a>
+                that says what a real run needs.
+              </span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="wrap section" id="quickstart" aria-labelledby="quick-title">
+        <div class="section-head">
+          <h2 id="quick-title">Quickstart</h2>
+        </div>
+        <div class="section-body flow">
+          <p>
+            Copy the YAML from the picker into <code>.github/workflows/</code> in your repo, set the
+            secrets its README lists, and push. For example, the PR checks:
+          </p>
+          <div class="code">
+            <pre id="quickstart-code"><code>mkdir -p .github/workflows
+curl -fsSL -o .github/workflows/pr-checks-node.yml \
+  https://raw.githubusercontent.com/mohamedtaqysalmi/ship-kit/main/workflows/pr-checks-node/pr-checks-node.yml
+git add .github/workflows/pr-checks-node.yml</code></pre>
+            <button class="btn btn-small copy" type="button" data-copy="quickstart-code">Copy</button>
+          </div>
+          <div class="badges">
+            <a href="https://github.com/mohamedtaqysalmi/ship-kit/actions/workflows/ci.yml"
+              ><img
+                alt="CI status"
+                width="110"
+                height="20"
+                src="https://github.com/mohamedtaqysalmi/ship-kit/actions/workflows/ci.yml/badge.svg"
+            /></a>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="how-title">
+        <div class="section-head">
+          <h2 id="how-title">How it is laid out</h2>
+        </div>
+        <div class="section-body flow">
+          <p>
+            Each workflow is a folder. The picker and the repository read the same files, and a
+            check fails the build if the catalog and the folders disagree.
+          </p>
+          <pre class="diagram" role="img" aria-label="Repository layout: workflows folder with one folder per workflow containing YAML and README; docs/evidence with one note per workflow; site copied from workflows at build time.">workflows/
+  &lt;name&gt;/
+    &lt;name&gt;.yml     the file you copy
+    README.md      secrets, setup, failure modes
+docs/evidence/
+  &lt;name&gt;.md       real run link, or what is still missing
+site/
+  snippets/        copied from workflows/ at build time</pre>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="built-title">
+        <div class="section-head">
+          <h2 id="built-title">How I built it</h2>
+        </div>
+        <div class="section-body">
+          <div class="notes">
+            <article>
+              <h3>Evidence before the word "tested"</h3>
+              <p>
+                A workflow only counts as tested when a real run is linked from
+                <code>docs/evidence/</code>. Until then, every place that lists it says it has not
+                been run.
+              </p>
+            </article>
+            <article>
+              <h3>The release workflow uses the gh CLI</h3>
+              <p>
+                The runner already has <code>gh</code>, so the release job calls
+                <code>gh release create</code> instead of pulling in a third-party action I would
+                have to trust and keep pinned.
+              </p>
+            </article>
+            <article>
+              <h3>Permissions per job</h3>
+              <p>
+                Workflows default to <code>contents: read</code>. The one job that pushes to GHCR
+                or creates a release asks for the extra scope itself.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="wrap section" aria-labelledby="limits-title">
+        <div class="section-head">
+          <h2 id="limits-title">Limits and roadmap</h2>
+        </div>
+        <div class="section-body flow">
+          <ul>
+            <li>Real runs are the missing piece. Without them these are reviewed files, not proven ones.</li>
+            <li>The Python and Node checks assume a conventional layout: a root <code>package.json</code> or <code>requirements.txt</code>.</li>
+            <li>SSH deploy assumes a Linux host with rsync and a release directory I describe in its README.</li>
+          </ul>
+          <p>
+            Open work is in the
+            <a href="https://github.com/mohamedtaqysalmi/ship-kit/issues">issues</a>. To report a
+            bug or add a workflow, start with
+            <a href="https://github.com/mohamedtaqysalmi/ship-kit/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.
+          </p>
+        </div>
       </section>
     </main>
 
-    <footer class="foot">
+    <footer class="wrap site-footer">
       <p>
-        Built by
-        <a href="https://github.com/mohamedtaqysalmi">Mohamed-Taqy Salmi</a>
-        · MIT ·
-        <a href="https://github.com/mohamedtaqysalmi/ship-kit">source</a>
+        Built by <a href="https://github.com/mohamedtaqysalmi">Mohamed-Taqy Salmi</a> ·
+        <a href="https://www.linkedin.com/in/mohamedtaqysalmi">LinkedIn</a>
+      </p>
+      <p>
+        MIT licensed · <a href="https://github.com/mohamedtaqysalmi/ship-kit">Source on GitHub</a>
       </p>
     </footer>
 
+    <script src="base.js" defer></script>
     <script type="module" src="app.js"></script>
   </body>
 </html>

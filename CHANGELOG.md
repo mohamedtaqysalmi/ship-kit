@@ -7,6 +7,11 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Changed
+
+- Rebuilt the Pages site on the shared page style (`base.css`, `base.js`, `page.css`). The picker now shows per workflow whether real run evidence exists.
+- `site/snippets/` is no longer committed. `scripts/sync-site.mjs` copies the YAML from `workflows/` at build time, and CI fails if the catalog and the folders disagree.
+
 ## [0.1.0] — 2026-11-11
 
 ### Added

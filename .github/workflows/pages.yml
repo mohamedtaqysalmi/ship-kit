@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "scripts/**"
       - "workflows/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -27,17 +28,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Refresh YAML snippets from workflows/
-        run: |
-          set -euo pipefail
-          mkdir -p site/snippets
-          cp workflows/pr-checks-python/pr-checks-python.yml site/snippets/
-          cp workflows/pr-checks-node/pr-checks-node.yml site/snippets/
-          cp workflows/docker-ghcr/docker-ghcr.yml site/snippets/
-          cp workflows/release-from-tag/release-from-tag.yml site/snippets/
-          cp workflows/ssh-deploy/ssh-deploy.yml site/snippets/
-          cp workflows/nightly-db-backup/nightly-db-backup.yml site/snippets/
-          ls -la site/snippets
+      - name: Copy workflow YAML into the site and check the catalog
+        run: node scripts/sync-site.mjs
       - name: Setup Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Upload artifact

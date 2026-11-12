@@ -1,0 +1,37 @@
+/* ship-kit: picker-only layout rules. Everything else is base.css. */
+
+.detail-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
+}
+.detail h3 {
+  margin: 0;
+}
+.detail-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  font-size: var(--step--1);
+}
+
+.secret-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.secret-list li {
+  margin: 0;
+  padding: 0 0.4rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  font-family: var(--mono);
+  font-size: var(--step--1);
+}
+
+.code pre {
+  max-height: 28rem;
+}
