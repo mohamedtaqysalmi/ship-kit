@@ -1,39 +1,15 @@
-/* ship-kit: accent colour and picker-only rules. Everything else is base.css. */
+/* ship-kit: picker-only layout rules. Everything else is base.css. */
 
-:root {
-  --accent-light: #0b5cad;
-  --accent-dark: #7ab8ff;
-}
-
-.picker-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-}
-
-.detail {
-  margin-top: 1rem;
-}
-.detail h3 {
-  margin: 0;
-  font-size: var(--step-1);
-}
 .detail-top {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 1rem;
+  align-items: baseline;
+  gap: 0.25rem 1rem;
 }
-.detail-top .tag {
-  flex: none;
-}
-.detail .blurb {
-  margin-top: 0.5rem;
+.detail h3 {
+  margin: 0;
 }
 .detail-links {
-  margin-top: 0.5rem;
   display: flex;
   flex-wrap: wrap;
   gap: 0.25rem 1.25rem;
@@ -49,8 +25,8 @@
 }
 .secret-list li {
   margin: 0;
-  padding: 0.15rem 0.5rem;
-  border: 1px solid var(--line);
+  padding: 0 0.4rem;
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   font-family: var(--mono);
   font-size: var(--step--1);
